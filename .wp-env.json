@@ -1,0 +1,19 @@
+{
+    "plugins": [
+        "./tests/fixtures/novamira"
+    ],
+    "mappings": {
+        "wp-content/plugins/nova-gate": "."
+    },
+    "port": 8931,
+    "testsPort": 8932,
+    "config": {
+        "WP_DEBUG": true,
+        "WP_DEBUG_LOG": true,
+        "WP_DEBUG_DISPLAY": false,
+        "SCRIPT_DEBUG": false,
+        "SAVEQUERIES": true,
+        "NOVA_GATE_IP_HEADER": "HTTP_X_TEST_IP",
+        "NOVA_GATE_TRUSTED_PROXIES": "172.16.0.0/12,192.168.0.0/16,127.0.0.1,::1"
+    }
+}

@@ -1,0 +1,8 @@
+# gitleaks config for Nova Gate. The default rules apply; one file is allow-listed.
+# tests/unit/GateKeysTest.php holds made-up, patterned test keys (KEY_A, KEY_B, KEY_C), not real secrets.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Made-up test keys in the unit tests"
+paths = ['''^tests/unit/GateKeysTest\.php$''']
