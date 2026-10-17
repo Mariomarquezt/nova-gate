@@ -6,8 +6,8 @@ Nova Gate is a security plugin, so we take reports about it seriously.
 
 | Version | Supported |
 |---|---|
-| 0.2.x (latest: 0.2.1) | Yes |
-| 0.1.x | No — update to 0.2.1 |
+| 0.2.x (latest: 0.2.2) | Yes |
+| 0.1.x | No — update to 0.2.2 |
 
 Only the latest release gets security fixes.
 

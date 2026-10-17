@@ -397,31 +397,45 @@ final class Admin
             <h2><?php esc_html_e('Connect', 'nova-gate'); ?></h2>
             <p><?php
                 /* translators: %s: header name */
-                echo esc_html(sprintf(__('Send the key in the %s header on every request to Novamira\'s MCP endpoint. Replace YOUR_KEY with your key.', 'nova-gate'), 'X-Nova-Gate-Key'));
+                echo esc_html(sprintf(__('Every request to Novamira\'s MCP endpoint needs two things: the key in the %s header, and a WordPress login (a user name and an application password). The key does not replace the login.', 'nova-gate'), 'X-Nova-Gate-Key'));
             ?></p>
+            <p><strong><?php esc_html_e('Important: once a key exists, an AI tool that does not send a key cannot connect. Update each tool right after you add its key.', 'nova-gate'); ?></strong></p>
+            <p><?php esc_html_e('In the examples, replace:', 'nova-gate'); ?></p>
+            <ul style="list-style:disc;margin-left:2em">
+                <li><?php echo wp_kses(__('<code>YOUR_KEY</code> – the Nova Gate key from this page.', 'nova-gate'), ['code' => []]); ?></li>
+                <li><?php echo wp_kses(__('<code>YOUR_USERNAME</code> – the WordPress user name the tool logs in as.', 'nova-gate'), ['code' => []]); ?></li>
+                <li><?php echo wp_kses(__('<code>YOUR_APP_PASSWORD</code> – an application password of that user (Users → Profile → Application Passwords). This is not the normal login password.', 'nova-gate'), ['code' => []]); ?></li>
+                <li><?php echo wp_kses(__('<code>YOUR_LOGIN_BASE64</code> – the user name and the application password joined by a colon, in Base64. Make it with the first command below.', 'nova-gate'), ['code' => []]); ?></li>
+            </ul>
 
             <?php
             $this->example(
+                'base64',
+                __('Make YOUR_LOGIN_BASE64 (macOS or Linux terminal)', 'nova-gate'),
+                "printf '%s' 'YOUR_USERNAME:YOUR_APP_PASSWORD' | base64 | tr -d '\\n'"
+            );
+            $this->example(
                 'claude',
                 __('Claude Code CLI', 'nova-gate'),
-                'claude mcp add --transport http novamira ' . $mcp_url . ' --header "X-Nova-Gate-Key: YOUR_KEY"'
+                'claude mcp add --transport http novamira ' . $mcp_url . " \\\n  --header \"X-Nova-Gate-Key: YOUR_KEY\" \\\n  --header \"Authorization: Basic YOUR_LOGIN_BASE64\""
             );
             $this->example(
                 'json',
                 __('Generic MCP client (JSON)', 'nova-gate'),
-                "{\n  \"mcpServers\": {\n    \"novamira\": {\n      \"type\": \"http\",\n      \"url\": \"" . $mcp_url . "\",\n      \"headers\": {\n        \"X-Nova-Gate-Key\": \"YOUR_KEY\"\n      }\n    }\n  }\n}"
+                "{\n  \"mcpServers\": {\n    \"novamira\": {\n      \"type\": \"http\",\n      \"url\": \"" . $mcp_url . "\",\n      \"headers\": {\n        \"X-Nova-Gate-Key\": \"YOUR_KEY\",\n        \"Authorization\": \"Basic YOUR_LOGIN_BASE64\"\n      }\n    }\n  }\n}"
             );
             $this->example(
                 'remote',
                 '@automattic/mcp-wordpress-remote',
-                "{\n  \"mcpServers\": {\n    \"novamira\": {\n      \"command\": \"npx\",\n      \"args\": [\"-y\", \"@automattic/mcp-wordpress-remote@latest\"],\n      \"env\": {\n        \"WP_API_URL\": \"" . $mcp_url . "\",\n        \"CUSTOM_HEADERS\": \"{\\\"X-Nova-Gate-Key\\\":\\\"YOUR_KEY\\\"}\"\n      }\n    }\n  }\n}"
+                "{\n  \"mcpServers\": {\n    \"novamira\": {\n      \"command\": \"npx\",\n      \"args\": [\"-y\", \"@automattic/mcp-wordpress-remote@latest\"],\n      \"env\": {\n        \"WP_API_URL\": \"" . $mcp_url . "\",\n        \"WP_API_USERNAME\": \"YOUR_USERNAME\",\n        \"WP_API_PASSWORD\": \"YOUR_APP_PASSWORD\",\n        \"CUSTOM_HEADERS\": \"{\\\"X-Nova-Gate-Key\\\":\\\"YOUR_KEY\\\"}\"\n      }\n    }\n  }\n}"
             );
             $this->example(
                 'curl',
-                'curl',
-                'curl -X POST ' . $mcp_url . " \\\n  -H \"X-Nova-Gate-Key: YOUR_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}'"
+                __('Test with curl', 'nova-gate'),
+                'curl -i -X POST ' . $mcp_url . " \\\n  -u \"YOUR_USERNAME:YOUR_APP_PASSWORD\" \\\n  -H \"X-Nova-Gate-Key: YOUR_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Accept: application/json, text/event-stream\" \\\n  -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":{},\"clientInfo\":{\"name\":\"curl\",\"version\":\"1\"}}}'"
             );
             ?>
+            <p><?php esc_html_e('The curl test answers 200 with "Novamira" in the body when everything works. 404 means the key was not accepted (a wrong key, or your address is blocked). 401 means the login was not accepted.', 'nova-gate'); ?></p>
 
             <h2><?php esc_html_e('Status URL', 'nova-gate'); ?></h2>
             <p><?php esc_html_e('Public. Shows whether the gate is active, whether Nova Gate loaded before Novamira, and whether the key header you sent is accepted. It never shows the key or its hash.', 'nova-gate'); ?></p>

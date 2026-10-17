@@ -1,4 +1,4 @@
-# gitleaks config for Nova Gate. The default rules apply; one file is allow-listed.
+# gitleaks config for Nova Gate. The default rules apply; one file and one placeholder are allow-listed.
 # tests/unit/GateKeysTest.php holds made-up, patterned test keys (KEY_A, KEY_B, KEY_C), not real secrets.
 [extend]
 useDefault = true
@@ -6,3 +6,8 @@ useDefault = true
 [[allowlists]]
 description = "Made-up test keys in the unit tests"
 paths = ['''^tests/unit/GateKeysTest\.php$''']
+
+[[allowlists]]
+description = "Documented placeholder login in the curl examples (README, settings page)"
+regexTarget = "match"
+regexes = ['''YOUR_USERNAME:YOUR_APP_PASSWORD''']

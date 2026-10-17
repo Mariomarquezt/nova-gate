@@ -5,7 +5,7 @@ Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 8.0
 Requires Plugins: novamira
-Stable tag: 0.2.1
+Stable tag: 0.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,14 +34,21 @@ Made by [Monkey Webs](https://monkeywebs.com/).
 
 == Installation ==
 
+You need a site where Novamira already works, and an AI tool that connects to it with a WordPress user name and an application password.
+
 1. Install and activate Novamira.
-2. Upload the `nova-gate` folder to `/wp-content/plugins/` and activate Nova Gate. Keep the folder name `nova-gate`: WordPress loads plugins in folder order, and Nova Gate must load before Novamira.
-3. Go to **Settings → Nova Gate**, give the key a label and click **Add key**. Copy the key: it is shown only once and is not stored anywhere. Only its SHA-256 hash is saved.
-4. Add the header `X-Nova-Gate-Key: <your key>` to your MCP client. The settings page shows copy-paste examples for Claude Code, generic JSON clients, `@automattic/mcp-wordpress-remote` and curl. The header is also read when Apache passes it as `REDIRECT_HTTP_X_NOVA_GATE_KEY`.
+2. Download `nova-gate-<version>.zip` from https://github.com/Mariomarquezt/nova-gate/releases/latest and upload it in **Plugins → Add New Plugin → Upload Plugin**, then activate Nova Gate. (Do not use GitHub's "Source code" zip; its folder name is wrong.) Keep the folder name `nova-gate`: WordPress loads plugins in folder order, and Nova Gate must load before Novamira.
+3. Go to **Settings → Nova Gate**, give the key a label and click **Add key**. Copy the key: it is shown only once and is not stored anywhere. Only its SHA-256 hash is saved. From this moment, an AI tool without the key cannot connect, so do step 4 right away.
+4. Add the header `X-Nova-Gate-Key: <your key>` to your MCP client. Keep the WordPress login (user name and application password) it already sends: Novamira still needs it. The settings page shows copy-paste examples with both for Claude Code, generic JSON clients, `@automattic/mcp-wordpress-remote` and curl. The header is also read when Apache passes it as `REDIRECT_HTTP_X_NOVA_GATE_KEY`.
+5. Check it: `https://your-site/wp-json/nova-gate/v1/status` shows `"active": true` and `"early": true`. The curl test on the settings page answers 200 with "Novamira" when everything works; 404 means the key was not accepted, 401 means the login was not accepted.
 
 Optional: define `NOVA_GATE_KEY_HASH` in `wp-config.php` with the SHA-256 hex digest of your key, or several digests separated by commas, or an array. The constant wins over the options, and the settings page then offers no key actions.
 
 == Frequently Asked Questions ==
+
+= My AI tool gets 404 or 401. Why? =
+
+404: the key was not accepted (a wrong key, a missing header, or your address is blocked after 10 wrong tries). 401: the key was accepted, but the WordPress login was not. Novamira needs a user name and an application password next to the key. Open the gate for a few minutes from wp-admin to check the tool without the key.
 
 = Can I have more than one key? =
 
@@ -112,6 +119,12 @@ Newer Novamira versions add a second endpoint, `/wp-json/mcp/novamira-oauth`, fo
 Not yet.
 
 == Changelog ==
+
+= 0.2.2 =
+* Docs and settings page only; no change to how the gate works.
+* The connect examples now include the WordPress login (application password) that Novamira needs. Before, a copied example got 401.
+* The curl example now sends `initialize`. The old `tools/list` example answered 400 ("Missing Mcp-Session-Id header").
+* New: a command to make the Base64 login, a warning that tools without a key stop connecting once a key exists, a quick start, and install steps that use the release zip.
 
 = 0.2.1 =
 * `NOVA_GATE_IP_HEADER` now counts only when the request comes from a proxy listed in the new `NOVA_GATE_TRUSTED_PROXIES` constant (a comma list of your own proxy IPs/CIDRs). Sites that set `NOVA_GATE_IP_HEADER` under v0.2.0 must add it, or the header is ignored – the settings page warns.

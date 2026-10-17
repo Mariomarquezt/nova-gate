@@ -6,11 +6,34 @@ minutes); while it is open this way, **every** authenticated caller gets in, als
 application password. Outside an open window, a stolen WordPress application password alone can no
 longer reach Novamira's MCP endpoint.
 
-- Plugin: `nova-gate` · Version 0.2.1 · GPL-2.0-or-later
+- Plugin: `nova-gate` · Version 0.2.2 · GPL-2.0-or-later
 - Requires WordPress 6.9+, PHP 8.0+, and the Novamira plugin
 - Made by [Monkey Webs](https://monkeywebs.com/)
 
 > **Independent add-on.** Not made, approved or supported by Novamira, Dynamic.ooo or Ovation S.r.l.
+
+## Quick start
+
+You need a WordPress site where Novamira already works, and an AI tool that already connects to it
+with a WordPress user name and an application password.
+
+1. **Download** `nova-gate-<version>.zip` from the
+   [latest release](https://github.com/Mariomarquezt/nova-gate/releases/latest). Do not use GitHub's
+   green **Code → Download ZIP** button or the "Source code" zip: their folder name is wrong.
+2. **Install:** in WordPress go to **Plugins → Add New Plugin → Upload Plugin**, choose the zip, click
+   **Install Now**, then **Activate**.
+3. **Make a key:** go to **Settings → Nova Gate**, type a label (for example `claude-code`) and click
+   **Add key**. Copy the key now; it is shown only this once.
+   **From this moment, an AI tool without the key cannot connect.** Do step 4 right away.
+4. **Update your AI tool:** add the header `X-Nova-Gate-Key: YOUR_KEY`. Keep the WordPress login it
+   already sends. The settings page shows ready-made examples with your site's address; the same
+   examples are in [Send the key](#send-the-key).
+5. **Check it:** open `https://YOUR-SITE/wp-json/nova-gate/v1/status`. You should see `"active": true`
+   and `"early": true`. Then run the [curl test](#send-the-key): `200` with `Novamira` in the
+   answer means it works.
+
+Locked yourself out? Open the gate for 30 minutes from wp-admin (turn Novamira's switch on), or
+remove the key in **Settings → Nova Gate**.
 
 ## How it works
 
@@ -33,10 +56,15 @@ with no early exit. Every unclear case ends locked.
 ## Install
 
 1. Install and activate Novamira.
-2. Copy this folder to `wp-content/plugins/nova-gate` and activate **Nova Gate**. Keep the folder name.
+2. Download `nova-gate-<version>.zip` from the
+   [releases page](https://github.com/Mariomarquezt/nova-gate/releases/latest) and upload it in
+   **Plugins → Add New Plugin → Upload Plugin**, then activate **Nova Gate**. Or unzip it and copy the
+   `nova-gate` folder to `wp-content/plugins/`. Keep the folder name `nova-gate`: WordPress loads
+   plugins in folder order, and Nova Gate must load before Novamira.
 3. **Settings → Nova Gate → Add key.** Give it a label (the name of the tool that will use it). Copy the
    key now; it is shown only this once.
-4. Send the key as the header `X-Nova-Gate-Key` on every request to `/wp-json/mcp/novamira`.
+4. Send the key as the header `X-Nova-Gate-Key` on every request to `/wp-json/mcp/novamira`, next to
+   the WordPress login. See [Send the key](#send-the-key).
 
 No build step, no Composer or npm dependency at runtime.
 
@@ -127,12 +155,32 @@ Nova Gate generates keys from 256 random bits. Imported keys are only as strong 
 
 ## Send the key
 
-The settings page shows these examples with your site's real URL. Replace `YOUR_KEY`.
+Every request to `/wp-json/mcp/novamira` needs **two** things:
+
+1. The Nova Gate key in the `X-Nova-Gate-Key` header.
+2. A WordPress login: a user name and an **application password** of that user
+   (**Users → Profile → Application Passwords**; not the normal login password). This is Novamira's
+   own login. The key does not replace it.
+
+Without an accepted key the endpoint answers `404` (it is hidden). With the key but without a valid
+login it answers `401`.
+
+The settings page shows these examples with your site's real URL. Replace `YOUR_KEY`,
+`YOUR_USERNAME`, `YOUR_APP_PASSWORD` and `YOUR_LOGIN_BASE64`.
+
+**Make `YOUR_LOGIN_BASE64`** (the user name and the application password joined by a colon, in
+Base64), in a macOS or Linux terminal:
+
+```sh
+printf '%s' 'YOUR_USERNAME:YOUR_APP_PASSWORD' | base64 | tr -d '\n'
+```
 
 **Claude Code CLI**
 
 ```sh
-claude mcp add --transport http novamira https://example.com/wp-json/mcp/novamira --header "X-Nova-Gate-Key: YOUR_KEY"
+claude mcp add --transport http novamira https://example.com/wp-json/mcp/novamira \
+  --header "X-Nova-Gate-Key: YOUR_KEY" \
+  --header "Authorization: Basic YOUR_LOGIN_BASE64"
 ```
 
 **Generic MCP client (JSON)**
@@ -143,7 +191,10 @@ claude mcp add --transport http novamira https://example.com/wp-json/mcp/novamir
     "novamira": {
       "type": "http",
       "url": "https://example.com/wp-json/mcp/novamira",
-      "headers": { "X-Nova-Gate-Key": "YOUR_KEY" }
+      "headers": {
+        "X-Nova-Gate-Key": "YOUR_KEY",
+        "Authorization": "Basic YOUR_LOGIN_BASE64"
+      }
     }
   }
 }
@@ -159,6 +210,8 @@ claude mcp add --transport http novamira https://example.com/wp-json/mcp/novamir
       "args": ["-y", "@automattic/mcp-wordpress-remote@latest"],
       "env": {
         "WP_API_URL": "https://example.com/wp-json/mcp/novamira",
+        "WP_API_USERNAME": "YOUR_USERNAME",
+        "WP_API_PASSWORD": "YOUR_APP_PASSWORD",
         "CUSTOM_HEADERS": "{\"X-Nova-Gate-Key\":\"YOUR_KEY\"}"
       }
     }
@@ -166,14 +219,25 @@ claude mcp add --transport http novamira https://example.com/wp-json/mcp/novamir
 }
 ```
 
-**curl**
+**Test with curl**
 
 ```sh
-curl -X POST https://example.com/wp-json/mcp/novamira \
+curl -i -X POST https://example.com/wp-json/mcp/novamira \
+  -u "YOUR_USERNAME:YOUR_APP_PASSWORD" \
   -H "X-Nova-Gate-Key: YOUR_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"1"}}}'
 ```
+
+| Answer | Meaning |
+|---|---|
+| `200` with `Novamira` in the body | It works. |
+| `404` | The key was not accepted: a wrong key, or your address is blocked after wrong tries. |
+| `401` | The key was accepted, but the login was not. Check the user name and the application password. |
+
+MCP needs `initialize` first. A later call such as `tools/list` must send the `Mcp-Session-Id`
+header that `initialize` returned; without it Novamira answers `400`. MCP clients do this for you.
 
 The header is also read when Apache passes it as `REDIRECT_HTTP_X_NOVA_GATE_KEY`.
 
@@ -215,7 +279,7 @@ wp nova-gate unblock                              # forget every wrong try and b
 `GET /wp-json/nova-gate/v1/status` needs no login and answers:
 
 ```json
-{ "nova_gate": "0.2.1", "active": true, "early": true, "key_header": "missing" }
+{ "nova_gate": "0.2.2", "active": true, "early": true, "key_header": "missing" }
 ```
 
 - `active` – a key configuration is present, even if empty or invalid. This does not mean any key

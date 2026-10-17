@@ -5,6 +5,25 @@ All notable changes to Nova Gate are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-10-17
+
+Docs and settings page only. No change to how the gate works.
+
+### Fixed
+
+- The connect examples on the settings page and in the README now include the WordPress login
+  (a user name and an application password) that Novamira needs. Before, a copied example got 401.
+- The curl example now sends `initialize`. The old `tools/list` example answered 400
+  ("Missing Mcp-Session-Id header").
+
+### Added
+
+- A Quick start in the README, and install steps that use the release zip.
+- On the settings page: what each placeholder means, a command that makes the Base64 login, a
+  warning that AI tools without a key stop connecting once a key exists, and what 200, 404 and 401
+  mean for the curl test.
+- A readme.txt FAQ entry for 404 and 401.
+
 ## [0.2.1] - 2026-10-15
 
 ### Added
