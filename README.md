@@ -346,6 +346,11 @@ pick other ports.
 `tests/fixtures/novamira/` is a frozen test double that copies only how Novamira reads its switch.
 It is not Novamira and contains none of its code.
 
+## Security
+
+Found a security problem? Do not open a public issue. Report it privately; see
+[SECURITY.md](SECURITY.md).
+
 ## License
 
 Nova Gate is free software, released under the GNU General Public License, version 2 or (at your
